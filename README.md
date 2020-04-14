@@ -26,6 +26,8 @@ If you have a UNIX-ish system with [GnuCOBOL][gnucobol] installed, you should be
 make run
 ```
 
+The code is intended to be compatible with any COBOL system that supports the 1985 standard.  I would appreciate hearing of any incompatibilities, and what is necessary to work around them.
+
 Here is an example play session:
 
 ```

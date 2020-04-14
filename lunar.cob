@@ -24,6 +24,7 @@ WORKING-STORAGE SECTION.
 *> L - Elapsed time (sec)
 *> M - Total weight (lbs)
 *> N - Empty weight (lbs, Note: M - N is remaining fuel weight)
+*> Q - Change in velocity
 *> S - Time elapsed in current 10-second turn (sec)
 *> T - Time remaining in current 10-second turn (sec)
 *> V - Downward speed (miles/sec)
@@ -38,11 +39,23 @@ WORKING-STORAGE SECTION.
 01 Elapsed                    PIC S9(6)V9(6)  USAGE COMP.
 01 Weight                     PIC S9(6)V9(6)  USAGE COMP.
 01 Empty-Weight               PIC S9(6)V9(6)  USAGE COMP.
+01 Q                          PIC S9(6)V9(6)  USAGE COMP.
 01 S                          PIC S9(6)V9(6)  USAGE COMP.
 01 T                          PIC S9(6)V9(6)  USAGE COMP.
 01 Velocity                   PIC S9(6)V9(6)  USAGE COMP.
 01 W                          PIC S9(6)V9(6)  USAGE COMP.
 01 Impulse                    PIC S9(6)V9(6)  USAGE COMP.
+
+*> Working variables used by Simulate and related paragraphs.
+
+01 Game-Over-Flag             PIC 9.
+    88 Game-Is-Not-Over       VALUE 0.
+    88 Is-Game-Over           VALUE 1.
+
+01 Q2                         PIC S9(6)V9(6)  USAGE COMP.
+01 Q3                         PIC S9(6)V9(6)  USAGE COMP.
+01 Q4                         PIC S9(6)V9(6)  USAGE COMP.
+01 Q5                         PIC S9(6)V9(6)  USAGE COMP.
 
 *> Output Formatting
 
@@ -65,7 +78,12 @@ WORKING-STORAGE SECTION.
     02 FILLER                 PIC X(12)  VALUE "NOT POSSIBLE".
     02 FILLER                 PIC X(51)  VALUE ALL '.'.
 
-*> ACCEPT Destinations
+01 Contact-Time-Display       PIC -(4)9.99.
+01 Impact-Velocity-Display    PIC -(4)9.99.
+01 Fuel-Left-Display          PIC -(4)9.99.
+01 Lunar-Crater-Display       PIC -(4)9.99.
+
+*> User Input
 
 01 Fuel-Rate-Answer       PIC 999.
     88 Is-Valid-Fuel-Rate VALUE 0, 8 THRU 200.
@@ -84,7 +102,7 @@ Begin.
     DISPLAY Blank-Line
 
     PERFORM WITH TEST AFTER UNTIL Dont-Try-Again
-        PERFORM Attempt-Landing
+        PERFORM Play-Game
 
         DISPLAY Blank-Line
         DISPLAY Blank-Line
@@ -103,7 +121,7 @@ Begin.
     STOP RUN.
 
 *> Play game until landing or crash.
-Attempt-Landing.
+Play-Game.
     DISPLAY "FIRST RADAR CHECK COMING UP"
     DISPLAY Blank-Line
     DISPLAY Blank-Line
@@ -118,7 +136,12 @@ Attempt-Landing.
     MOVE 1.8   TO Impulse
     MOVE 0     TO Elapsed
 
-    PERFORM Get-Fuel-Rate
+    SET Game-Is-Not-Over TO TRUE
+
+    PERFORM UNTIL Is-Game-Over
+        PERFORM Get-Fuel-Rate
+        PERFORM Simulate
+    END-PERFORM
 
     EXIT.
 
@@ -144,4 +167,80 @@ Get-Fuel-Rate.
         END-IF
     END-PERFORM
 
+    EXIT.
+
+*> Simulate 10 seconds using current fuel rate.
+*> If out of fuel, continue until contact.
+*> On contact, determine outcome and display score.
+Simulate.
+    DISPLAY "(TODO: Implement Simulate)"
+    SET Is-Game-Over TO TRUE
+    EXIT.
+
+*> Subroutine at line 06.10 in original FOCAL code
+Update-Lander-State.
+    ADD S TO Elapsed
+    SUBTRACT S FROM T
+    COMPUTE Weight = Weight - (S * Fuel-Rate)
+        ON SIZE ERROR DISPLAY "<SIZE ERROR: Update-Lander-State Weight>"
+    MOVE I TO Altitude
+    MOVE J TO Velocity
+    EXIT.
+
+*> Subroutine at line 09.10 in original FOCAL code
+Apply-Thrust.
+    COMPUTE Q = S * Fuel-Rate / Weight
+        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust Q>"
+    COMPUTE Q2 = Q ** 2
+        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust Q2>"
+    COMPUTE Q3 = Q ** 3
+        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust Q3>"
+    COMPUTE Q4 = Q ** 4
+        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust Q4>"
+    COMPUTE Q5 = Q ** 5
+        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust Q5>"
+    COMPUTE J =
+        Velocity
+        + Gravity * S
+        + Impulse * (-Q - Q2/2 - Q3/3 - Q4/4 - Q5/5)
+        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust J>"
+    COMPUTE I =
+        Altitude
+        - Gravity * S * S / 2
+        - Velocity * S
+        + Impulse * S * (Q/2 + Q2/6 + Q3/12 + Q4/20 + Q5/30)
+        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust I>"
+    EXIT.
+
+*> Handle touchdown/crash.
+*> (05.10 in original FOCAL code)
+Contact.
+    MOVE Elapsed to Contact-Time-Display
+    DISPLAY "ON THE MOON AT " Contact-Time-Display " SECS"
+
+    COMPUTE W = Sec-Per-Hour * Velocity
+        ON SIZE ERROR DISPLAY "<SIZE ERROR: Contact W>"
+    MOVE W TO Impact-Velocity-Display
+    DISPLAY "IMPACT VELOCITY OF " Impact-Velocity-Display " M.P.H."
+
+    COMPUTE Fuel-Left-Display = Weight - Empty-Weight
+    DISPLAY "FUEL LEFT: " Fuel-Left-Display
+
+    EVALUATE W
+        WHEN <  1 DISPLAY "PERFECT LANDING !-(LUCKY)"
+        WHEN < 10 DISPLAY "GOOD LANDING-(COULD BE BETTER)"
+        WHEN < 22 DISPLAY "CONGRATULATIONS ON A POOR LANDING"
+        WHEN < 40 DISPLAY "CRAFT DAMAGE. GOOD LUCK"
+        WHEN < 60 DISPLAY "CRASH LANDING-YOU'VE 5 HRS OXYGEN"
+        WHEN OTHER
+            PERFORM
+                DISPLAY "SORRY,BUT THERE WERE NO SURVIVORS-YOU BLEW IT!"
+                COMPUTE Lunar-Crater-Display = W * 0.277777
+                DISPLAY
+                    "IN FACT YOU BLASTED A NEW LUNAR CRATER "
+                    Lunar-Crater-Display " FT. DEEP"
+            END-PERFORM
+    END-EVALUATE
+
+    SET Is-Game-Over TO TRUE
     EXIT.
