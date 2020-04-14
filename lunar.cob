@@ -8,6 +8,11 @@ PROGRAM-ID. Lunar-Lander.
 DATA DIVISION.
 WORKING-STORAGE SECTION.
 
+*> Constants
+
+01 Feet-Per-Mile              PIC 9(4)  VALUE 5280  USAGE COMP.
+01 Sec-Per-Hour               PIC 9(4)  VALUE 3600  USAGE COMP.
+
 *> Global variables from original FOCAL code:
 *>
 *> A - Altitude (miles)
@@ -51,7 +56,7 @@ WORKING-STORAGE SECTION.
     02 Elapsed-Display        PIC Z(6)9.
     02 Altitude-Miles-Display PIC Z(15)9.
     02 Altitude-Feet-Display  PIC Z(6)9.
-    02 Velocity-MPH-Display   PIC Z(11)9.99.
+    02 Velocity-MPH-Display   PIC -(11)9.99.
     02 Fuel-Remaining-Display PIC Z(9)9.9.
     02 FILLER                 PIC X(6)  VALUE SPACES.
 
@@ -65,8 +70,8 @@ WORKING-STORAGE SECTION.
     88 Is-Valid-Fuel-Rate VALUE 0, 8 THRU 200.
 
 01 Try-Again-Answer       PIC X(3).
-    88 Try-Again          VALUE "y", "Y", "yes", "YES".
-    88 Dont-Try-Again     VALUE "n", "N", "no", "NO".
+    88 Try-Again          VALUE "YES", "yes", "y", "Y".
+    88 Dont-Try-Again     VALUE "NO", "no", "n", "N".
 
 PROCEDURE DIVISION.
 Begin.
@@ -93,6 +98,7 @@ Begin.
     DISPLAY "CONTROL OUT"
     DISPLAY " "
     DISPLAY " "
+
     STOP RUN.
 
 Attempt-Landing.
@@ -114,12 +120,14 @@ Attempt-Landing.
 
     EXIT.
 
-*> 02.10 in original FOCAL code
+*> Display current status and prompt for new Fuel-Rate value until
+*> valid answer is given.
 Get-Fuel-Rate.
     MOVE Elapsed to Elapsed-Display
-    MOVE 0 to Altitude-Miles-Display
-    MOVE 0 to Altitude-Feet-Display
-    COMPUTE Velocity-MPH-Display = Velocity * 3600
+    COMPUTE Altitude-Miles-Display = FUNCTION INTEGER-PART(Altitude)
+    COMPUTE Altitude-Feet-Display =
+        (Altitude - FUNCTION INTEGER-PART(Altitude)) * Feet-Per-Mile
+    COMPUTE Velocity-MPH-Display = Velocity * Sec-Per-Hour
     COMPUTE Fuel-Remaining-Display = Weight - Empty-Weight
 
     DISPLAY Status-Row-Data NO ADVANCING

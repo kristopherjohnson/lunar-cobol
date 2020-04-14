@@ -1,6 +1,6 @@
 # GnuCOBOL
 COBC:=cobc
-COBCFLAGS:=-free -std=cobol85
+COBCFLAGS:=-free -Wall -std=cobol85
 
 lunar: lunar.cob
 	$(COBC) $(COBCFLAGS) -x $<
