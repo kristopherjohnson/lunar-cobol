@@ -3,7 +3,7 @@
 *> by Jim Storer from FOCAL to COBOL.
 
 IDENTIFICATION DIVISION.
-PROGRAM-ID. LUNAR.
+PROGRAM-ID. Lunar-Lander.
 
 DATA DIVISION.
 WORKING-STORAGE SECTION.
@@ -24,26 +24,49 @@ WORKING-STORAGE SECTION.
 *> W - Temporary working variable
 *> Z - Thrust per pound of fuel burned
 
-01 Altitude               PIC 9(8)V9(4) USAGE COMP.
-01 Gravity                PIC 9(8)V9(4) USAGE COMP.
-01 I                      PIC 9(8)V9(4) USAGE COMP.
-01 J                      PIC 9(8)V9(4) USAGE COMP.
-01 FuelRate               PIC 9(8)V9(4) USAGE COMP.
-01 ElapsedSec             PIC 9(8)V9(4) USAGE COMP.
-01 Weight                 PIC 9(8)V9(4) USAGE COMP.
-01 EmptyWeight            PIC 9(8)V9(4) USAGE COMP.
-01 S                      PIC 9(8)V9(4) USAGE COMP.
-01 T                      PIC 9(8)V9(4) USAGE COMP.
-01 Velocity               PIC 9(8)V9(4) USAGE COMP.
-01 W                      PIC 9(8)V9(4) USAGE COMP.
-01 Impulse                PIC 9(8)V9(4) USAGE COMP.
+01 Altitude                   PIC S9(8)V9(4)  USAGE COMP.
+01 Gravity                    PIC S9(8)V9(4)  USAGE COMP.
+01 I                          PIC S9(8)V9(4)  USAGE COMP.
+01 J                          PIC S9(8)V9(4)  USAGE COMP.
+01 Fuel-Rate                  PIC S9(8)V9(4)  USAGE COMP.
+01 Elapsed                    PIC S9(8)V9(4)  USAGE COMP.
+01 Weight                     PIC S9(8)V9(4)  USAGE COMP.
+01 Empty-Weight               PIC S9(8)V9(4)  USAGE COMP.
+01 S                          PIC S9(8)V9(4)  USAGE COMP.
+01 T                          PIC S9(8)V9(4)  USAGE COMP.
+01 Velocity                   PIC S9(8)V9(4)  USAGE COMP.
+01 W                          PIC S9(8)V9(4)  USAGE COMP.
+01 Impulse                    PIC S9(8)V9(4)  USAGE COMP.
 
-01 FuelRateAnswer         PIC 999.
-    88 IsValidFuelRate    VALUE 0, 8 THRU 100.
+*> Output Formatting
 
-01 TryAgainAnswer         PIC X(3).
-    88 TryAgain           VALUE "y", "Y", "yes", "YES".
-    88 DontTryAgain       VALUE "n", "N", "no", "NO".
+01 Status-Row-Headings.
+    02 FILLER                 PIC X(12)  VALUE "TIME,SECS".
+    02 FILLER                 PIC X(22)  VALUE "ALTITUDE,MILES+FEET".
+    02 FILLER                 PIC X(15)  VALUE "VELOCITY,MPH".
+    02 FILLER                 PIC X(11)  VALUE "FUEL,LBS".
+    02 FILLER                 PIC X(9)   VALUE "FUEL RATE".
+
+01 Status-Row-Data.
+    02 Elapsed-Display        PIC Z(6)9.
+    02 Altitude-Miles-Display PIC Z(15)9.
+    02 Altitude-Feet-Display  PIC Z(6)9.
+    02 Velocity-MPH-Display   PIC Z(11)9.99.
+    02 Fuel-Remaining-Display PIC Z(9)9.9.
+    02 FILLER                 PIC X(6)  VALUE SPACES.
+
+01 Not-Possible-Message.
+    02 FILLER                 PIC X(12)  VALUE "NOT POSSIBLE".
+    02 FILLER                 PIC X(51)  VALUE ALL '.'.
+
+*> ACCEPT Destinations
+
+01 Fuel-Rate-Answer       PIC 999.
+    88 Is-Valid-Fuel-Rate VALUE 0, 8 THRU 200.
+
+01 Try-Again-Answer       PIC X(3).
+    88 Try-Again          VALUE "y", "Y", "yes", "YES".
+    88 Dont-Try-Again     VALUE "n", "N", "no", "NO".
 
 PROCEDURE DIVISION.
 Begin.
@@ -54,16 +77,16 @@ Begin.
     DISPLAY " "
     DISPLAY " "
 
-    PERFORM WITH TEST AFTER UNTIL DontTryAgain
+    PERFORM WITH TEST AFTER UNTIL Dont-Try-Again
 
-        DISPLAY "(TODO: Attempt landing)"
+        PERFORM Attempt-Landing
 
         DISPLAY " "
         DISPLAY " "
         DISPLAY "TRY AGAIN?"
-        PERFORM WITH TEST AFTER UNTIL TryAgain OR DontTryAgain
+        PERFORM WITH TEST AFTER UNTIL Try-Again OR Dont-Try-Again
             DISPLAY "(ANS. YES OR NO):" NO ADVANCING
-            ACCEPT TryAgainAnswer
+            ACCEPT Try-Again-Answer
         END-PERFORM
     END-PERFORM
 
@@ -71,3 +94,44 @@ Begin.
     DISPLAY " "
     DISPLAY " "
     STOP RUN.
+
+Attempt-Landing.
+    DISPLAY "FIRST RADAR CHECK COMING UP"
+    DISPLAY " "
+    DISPLAY " "
+    DISPLAY "COMMENCE LANDING PROCEDURE"
+    DISPLAY Status-Row-Headings
+
+    MOVE 120   TO Altitude
+    MOVE 1     TO Velocity
+    MOVE 32500 TO Weight
+    MOVE 16500 TO Empty-Weight
+    MOVE 0.001 TO Gravity
+    MOVE 1.8   TO Impulse
+    MOVE 0     TO Elapsed
+
+    PERFORM Get-Fuel-Rate
+
+    EXIT.
+
+*> 02.10 in original FOCAL code
+Get-Fuel-Rate.
+    MOVE Elapsed to Elapsed-Display
+    MOVE 0 to Altitude-Miles-Display
+    MOVE 0 to Altitude-Feet-Display
+    COMPUTE Velocity-MPH-Display = Velocity * 3600
+    COMPUTE Fuel-Remaining-Display = Weight - Empty-Weight
+
+    DISPLAY Status-Row-Data NO ADVANCING
+
+    PERFORM WITH TEST AFTER UNTIL Is-Valid-Fuel-Rate
+        DISPLAY "K=:" NO ADVANCING
+        ACCEPT Fuel-Rate-Answer
+        IF Is-Valid-Fuel-Rate THEN
+            MOVE Fuel-Rate-Answer TO Fuel-Rate
+        ELSE
+            DISPLAY Not-Possible-Message NO ADVANCING
+        END-IF
+    END-PERFORM
+
+    EXIT.
