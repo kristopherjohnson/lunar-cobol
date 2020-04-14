@@ -12,6 +12,7 @@ WORKING-STORAGE SECTION.
 
 01 Feet-Per-Mile              PIC 9(4)  VALUE 5280  USAGE COMP.
 01 Sec-Per-Hour               PIC 9(4)  VALUE 3600  USAGE COMP.
+01 Blank-Line                 PIC X     VALUE SPACE.
 
 *> Global variables from original FOCAL code:
 *>
@@ -29,19 +30,19 @@ WORKING-STORAGE SECTION.
 *> W - Temporary working variable
 *> Z - Thrust per pound of fuel burned
 
-01 Altitude                   PIC S9(8)V9(4)  USAGE COMP.
-01 Gravity                    PIC S9(8)V9(4)  USAGE COMP.
-01 I                          PIC S9(8)V9(4)  USAGE COMP.
-01 J                          PIC S9(8)V9(4)  USAGE COMP.
-01 Fuel-Rate                  PIC S9(8)V9(4)  USAGE COMP.
-01 Elapsed                    PIC S9(8)V9(4)  USAGE COMP.
-01 Weight                     PIC S9(8)V9(4)  USAGE COMP.
-01 Empty-Weight               PIC S9(8)V9(4)  USAGE COMP.
-01 S                          PIC S9(8)V9(4)  USAGE COMP.
-01 T                          PIC S9(8)V9(4)  USAGE COMP.
-01 Velocity                   PIC S9(8)V9(4)  USAGE COMP.
-01 W                          PIC S9(8)V9(4)  USAGE COMP.
-01 Impulse                    PIC S9(8)V9(4)  USAGE COMP.
+01 Altitude                   PIC S9(6)V9(6)  USAGE COMP.
+01 Gravity                    PIC S9(6)V9(6)  USAGE COMP.
+01 I                          PIC S9(6)V9(6)  USAGE COMP.
+01 J                          PIC S9(6)V9(6)  USAGE COMP.
+01 Fuel-Rate                  PIC S9(6)V9(6)  USAGE COMP.
+01 Elapsed                    PIC S9(6)V9(6)  USAGE COMP.
+01 Weight                     PIC S9(6)V9(6)  USAGE COMP.
+01 Empty-Weight               PIC S9(6)V9(6)  USAGE COMP.
+01 S                          PIC S9(6)V9(6)  USAGE COMP.
+01 T                          PIC S9(6)V9(6)  USAGE COMP.
+01 Velocity                   PIC S9(6)V9(6)  USAGE COMP.
+01 W                          PIC S9(6)V9(6)  USAGE COMP.
+01 Impulse                    PIC S9(6)V9(6)  USAGE COMP.
 
 *> Output Formatting
 
@@ -53,11 +54,11 @@ WORKING-STORAGE SECTION.
     02 FILLER                 PIC X(9)   VALUE "FUEL RATE".
 
 01 Status-Row-Data.
-    02 Elapsed-Display        PIC Z(6)9.
-    02 Altitude-Miles-Display PIC Z(15)9.
-    02 Altitude-Feet-Display  PIC Z(6)9.
+    02 Elapsed-Display        PIC -(6)9.
+    02 Altitude-Miles-Display PIC -(15)9.
+    02 Altitude-Feet-Display  PIC -(6)9.
     02 Velocity-MPH-Display   PIC -(11)9.99.
-    02 Fuel-Remaining-Display PIC Z(9)9.9.
+    02 Fuel-Remaining-Display PIC -(9)9.9.
     02 FILLER                 PIC X(6)  VALUE SPACES.
 
 01 Not-Possible-Message.
@@ -79,16 +80,16 @@ Begin.
     DISPLAY "YOU MAY RESET FUEL RATE K EACH 10 SECS TO 0 OR ANY VALUE"
     DISPLAY "BETWEEN 8 & 200 LBS/SEC. YOU'VE 16000 LBS FUEL. ESTIMATED"
     DISPLAY "FREE FALL IMPACT TIME-120 SECS. CAPSULE WEIGHT-32500 LBS"
-    DISPLAY " "
-    DISPLAY " "
+    DISPLAY Blank-Line
+    DISPLAY Blank-Line
 
     PERFORM WITH TEST AFTER UNTIL Dont-Try-Again
-
         PERFORM Attempt-Landing
 
-        DISPLAY " "
-        DISPLAY " "
+        DISPLAY Blank-Line
+        DISPLAY Blank-Line
         DISPLAY "TRY AGAIN?"
+
         PERFORM WITH TEST AFTER UNTIL Try-Again OR Dont-Try-Again
             DISPLAY "(ANS. YES OR NO):" NO ADVANCING
             ACCEPT Try-Again-Answer
@@ -96,15 +97,16 @@ Begin.
     END-PERFORM
 
     DISPLAY "CONTROL OUT"
-    DISPLAY " "
-    DISPLAY " "
+    DISPLAY Blank-Line
+    DISPLAY Blank-Line
 
     STOP RUN.
 
+*> Play game until landing or crash.
 Attempt-Landing.
     DISPLAY "FIRST RADAR CHECK COMING UP"
-    DISPLAY " "
-    DISPLAY " "
+    DISPLAY Blank-Line
+    DISPLAY Blank-Line
     DISPLAY "COMMENCE LANDING PROCEDURE"
     DISPLAY Status-Row-Headings
 
