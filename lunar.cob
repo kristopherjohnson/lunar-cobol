@@ -114,6 +114,7 @@ Begin.
         PERFORM WITH TEST AFTER UNTIL TryAgain OR DontTryAgain
             DISPLAY "(ANS. YES OR NO):" NO ADVANCING
             ACCEPT TryAgainAnswer
+            *>TEST:DISPLAY TryAgainAnswer
         END-PERFORM
     END-PERFORM
 
@@ -152,7 +153,7 @@ PlayGame.
 *> Display current status and prompt for new Fuel-Rate value until
 *> valid answer is given.
 GetFuelRate.
-    MOVE ElapsedTime to ElapsedTimeDisplay
+    COMPUTE ElapsedTimeDisplay = ElapsedTime
     COMPUTE AltitudeMilesDisplay = FUNCTION INTEGER-PART(Altitude)
     COMPUTE AltitudeFeetDisplay =
         (Altitude - FUNCTION INTEGER-PART(Altitude)) * FeetPerMile
@@ -164,6 +165,7 @@ GetFuelRate.
     PERFORM WITH TEST AFTER UNTIL IsValidFuelRate
         DISPLAY "K=:" NO ADVANCING
         ACCEPT FuelRateAnswer
+        *>TEST:DISPLAY FuelRateAnswer
         IF IsValidFuelRate THEN
             MOVE FuelRateAnswer TO FuelRate
         ELSE
@@ -202,7 +204,7 @@ Simulate.
 
 *> (04.10 in original FOCAL code)
 FuelOut.
-    MOVE ElapsedTime to FuelOutTimeDisplay
+    COMPUTE FuelOutTimeDisplay = ElapsedTime
     DISPLAY "FUEL OUT AT " FuelOutTimeDisplay " SECS"
     COMPUTE S =
         (FUNCTION SQRT(Velocity**2 + 2 * Altitude * Gravity) - Velocity)
@@ -215,13 +217,13 @@ FuelOut.
 *> Handle touchdown/crash
 *> (05.10 in original FOCAL code)
 Contact.
-    MOVE ElapsedTime to ContactTimeDisplay
+    COMPUTE ContactTimeDisplay = ElapsedTime
     DISPLAY "ON THE MOON AT " ContactTimeDisplay " SECS"
 
     *> W is velocity in miles-per-hour
     COMPUTE W = SecPerHour * Velocity
 
-    MOVE W TO ImpactVelocityDisplay
+    COMPUTE ImpactVelocityDisplay = W
     DISPLAY "IMPACT VELOCITY OF " ImpactVelocityDisplay " M.P.H."
 
     COMPUTE FuelLeftDisplay = Weight - EmptyWeight
