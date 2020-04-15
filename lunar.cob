@@ -46,7 +46,7 @@ WORKING-STORAGE SECTION.
 01 W                          PIC S9(6)V9(6)  USAGE COMP.
 01 Impulse                    PIC S9(6)V9(6)  USAGE COMP.
 
-*> Working variables used by Simulate and related paragraphs.
+*> Variables used by Simulate and related paragraphs.
 
 01 Game-Over-Flag             PIC 9.
     88 Game-Is-Not-Over       VALUE 0.
@@ -78,19 +78,20 @@ WORKING-STORAGE SECTION.
     02 FILLER                 PIC X(12)  VALUE "NOT POSSIBLE".
     02 FILLER                 PIC X(51)  VALUE ALL '.'.
 
-01 Contact-Time-Display       PIC -(4)9.99.
-01 Impact-Velocity-Display    PIC -(4)9.99.
-01 Fuel-Left-Display          PIC -(4)9.99.
-01 Lunar-Crater-Display       PIC -(4)9.99.
+01 Fuel-Out-Time-Display      PIC -(5)9.99.
+01 Contact-Time-Display       PIC -(5)9.99.
+01 Impact-Velocity-Display    PIC -(5)9.99.
+01 Fuel-Left-Display          PIC -(5)9.99.
+01 Lunar-Crater-Display       PIC -(5)9.99.
 
 *> User Input
 
-01 Fuel-Rate-Answer       PIC 999.
-    88 Is-Valid-Fuel-Rate VALUE 0, 8 THRU 200.
+01 Fuel-Rate-Answer           PIC 999.
+    88 Is-Valid-Fuel-Rate     VALUE 0, 8 THRU 200.
 
-01 Try-Again-Answer       PIC X(3).
-    88 Try-Again          VALUE "YES", "yes", "y", "Y".
-    88 Dont-Try-Again     VALUE "NO", "no", "n", "N".
+01 Try-Again-Answer           PIC X(3).
+    88 Try-Again              VALUE "YES", "yes", "y", "Y".
+    88 Dont-Try-Again         VALUE "NO", "no", "n", "N".
 
 PROCEDURE DIVISION.
 Begin.
@@ -140,6 +141,7 @@ Play-Game.
 
     PERFORM UNTIL Is-Game-Over
         PERFORM Get-Fuel-Rate
+        MOVE 10 TO T
         PERFORM Simulate
     END-PERFORM
 
@@ -169,57 +171,54 @@ Get-Fuel-Rate.
 
     EXIT.
 
-*> Simulate 10 seconds using current fuel rate.
-*> If out of fuel, continue until contact.
-*> On contact, determine outcome and display score.
+*> Simulate T seconds using current fuel rate.
+*> If out of fuel, continue until contact with surface.
+*> On contact with surface, determine outcome and display score.
+*> (03.10 in original FOCAL code)
 Simulate.
-    DISPLAY "(TODO: Implement Simulate)"
-    SET Is-Game-Over TO TRUE
+    PERFORM UNTIL Is-Game-Over OR T < 0.001
+        IF (Weight - Empty-Weight) < 0.001 THEN
+            PERFORM Fuel-Out
+        ELSE
+            MOVE T TO S
+            IF (S * Fuel-Rate) > (Weight - Empty-Weight) THEN
+                COMPUTE S = (Weight - Empty-Weight) / Fuel-Rate
+            END-IF
+            PERFORM Apply-Thrust
+            IF I <= 0 THEN
+                PERFORM Update-Until-Contact
+            ELSE
+                IF Velocity > 0 AND J < 0 THEN
+                    PERFORM Loop-08-10
+                ELSE
+                    PERFORM Update-Lander-State
+                END-IF
+            END-IF
+        END-IF
+    END-PERFORM
     EXIT.
 
-*> Subroutine at line 06.10 in original FOCAL code
-Update-Lander-State.
-    ADD S TO Elapsed
-    SUBTRACT S FROM T
-    COMPUTE Weight = Weight - (S * Fuel-Rate)
-        ON SIZE ERROR DISPLAY "<SIZE ERROR: Update-Lander-State Weight>"
-    MOVE I TO Altitude
-    MOVE J TO Velocity
+*> (4.10 in original FOCAL code)
+Fuel-Out.
+    MOVE Elapsed to Fuel-Out-Time-Display
+    DISPLAY "FUEL OUT AT " Fuel-Out-Time-Display " SECS"
+    COMPUTE S =
+        (FUNCTION SQRT(Velocity**2 + 2 * Altitude * Gravity) - Velocity)
+        / Gravity
+    COMPUTE Velocity = Velocity + Gravity * S
+    ADD S to Elapsed
+    PERFORM Contact
     EXIT.
 
-*> Subroutine at line 09.10 in original FOCAL code
-Apply-Thrust.
-    COMPUTE Q = S * Fuel-Rate / Weight
-        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust Q>"
-    COMPUTE Q2 = Q ** 2
-        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust Q2>"
-    COMPUTE Q3 = Q ** 3
-        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust Q3>"
-    COMPUTE Q4 = Q ** 4
-        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust Q4>"
-    COMPUTE Q5 = Q ** 5
-        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust Q5>"
-    COMPUTE J =
-        Velocity
-        + Gravity * S
-        + Impulse * (-Q - Q2/2 - Q3/3 - Q4/4 - Q5/5)
-        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust J>"
-    COMPUTE I =
-        Altitude
-        - Gravity * S * S / 2
-        - Velocity * S
-        + Impulse * S * (Q/2 + Q2/6 + Q3/12 + Q4/20 + Q5/30)
-        ON SIZE ERROR DISPLAY "<SIZE ERROR: Apply-Thrust I>"
-    EXIT.
-
-*> Handle touchdown/crash.
+*> Handle touchdown/crash
 *> (05.10 in original FOCAL code)
 Contact.
     MOVE Elapsed to Contact-Time-Display
     DISPLAY "ON THE MOON AT " Contact-Time-Display " SECS"
 
+    *> W is velocity in miles-per-hour
     COMPUTE W = Sec-Per-Hour * Velocity
-        ON SIZE ERROR DISPLAY "<SIZE ERROR: Contact W>"
+
     MOVE W TO Impact-Velocity-Display
     DISPLAY "IMPACT VELOCITY OF " Impact-Velocity-Display " M.P.H."
 
@@ -244,3 +243,64 @@ Contact.
 
     SET Is-Game-Over TO TRUE
     EXIT.
+
+*> Subroutine at line 06.10 in original FOCAL code
+Update-Lander-State.
+    ADD S TO Elapsed
+    SUBTRACT S FROM T
+    COMPUTE Weight = Weight - (S * Fuel-Rate)
+    MOVE I TO Altitude
+    MOVE J TO Velocity
+    EXIT.
+
+*> 7.10 in original FOCAL code
+Update-Until-Contact.
+    PERFORM UNTIL S < 0.005
+        COMPUTE S =
+            2 * Altitude
+            / (Velocity
+                + FUNCTION SQRT(
+                    Velocity**2 + 2 * Altitude
+                    * (Gravity - Impulse * Fuel-Rate / Weight)))
+        PERFORM Apply-Thrust
+        PERFORM Update-Lander-State
+    END-PERFORM
+    PERFORM Contact
+    EXIT.
+
+*> 08-10 in original FOCAL code
+Loop-08-10.
+    PERFORM WITH TEST AFTER UNTIL (I <= 0) OR (-J < 0) OR (Velocity <= 0)
+        COMPUTE W = (1 - Weight * Gravity / (Impulse * Fuel-Rate)) / 2
+        COMPUTE S =
+            Weight * Velocity
+            / (Impulse * Fuel-Rate
+                * (W + FUNCTION SQRT(W**2 + Velocity / Impulse)))
+            + 0.5
+        PERFORM Apply-Thrust
+        IF I <= 0 THEN
+            PERFORM Update-Until-Contact
+        ELSE
+            PERFORM Update-Lander-State
+        END-IF
+    END-PERFORM
+    EXIT.
+
+*> Subroutine at line 09.10 in original FOCAL code
+Apply-Thrust.
+    COMPUTE Q = S * Fuel-Rate / Weight
+    COMPUTE Q2 = Q ** 2
+    COMPUTE Q3 = Q ** 3
+    COMPUTE Q4 = Q ** 4
+    COMPUTE Q5 = Q ** 5
+    COMPUTE J =
+        Velocity
+        + Gravity * S
+        + Impulse * (-Q - Q2/2 - Q3/3 - Q4/4 - Q5/5)
+    COMPUTE I =
+        Altitude
+        - Gravity * S * S / 2
+        - Velocity * S
+        + Impulse * S * (Q/2 + Q2/6 + Q3/12 + Q4/20 + Q5/30)
+    EXIT.
+
