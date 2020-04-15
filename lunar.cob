@@ -3,7 +3,7 @@
 *> by Jim Storer from FOCAL to COBOL.
 
 IDENTIFICATION DIVISION.
-PROGRAM-ID. Lunar-Lander.
+PROGRAM-ID. LunarLander.
 
 DATA DIVISION.
 WORKING-STORAGE SECTION.
@@ -36,7 +36,7 @@ WORKING-STORAGE SECTION.
 01 I                          PIC S9(6)V9(6)  USAGE COMP.
 01 J                          PIC S9(6)V9(6)  USAGE COMP.
 01 FuelRate                   PIC S9(6)V9(6)  USAGE COMP.
-01 Elapsed                    PIC S9(6)V9(6)  USAGE COMP.
+01 ElapsedTime                PIC S9(6)V9(6)  USAGE COMP.
 01 Weight                     PIC S9(6)V9(6)  USAGE COMP.
 01 EmptyWeight                PIC S9(6)V9(6)  USAGE COMP.
 01 Q                          PIC S9(6)V9(6)  USAGE COMP.
@@ -67,7 +67,7 @@ WORKING-STORAGE SECTION.
     02 FILLER                 PIC X(9)   VALUE "FUEL RATE".
 
 01 StatusRowData.
-    02 ElapsedDisplay         PIC -(6)9.
+    02 ElapsedTimeDisplay     PIC -(6)9.
     02 AltitudeMilesDisplay   PIC -(15)9.
     02 AltitudeFeetDisplay    PIC -(6)9.
     02 VelocityMphDisplay     PIC -(11)9.99.
@@ -94,6 +94,8 @@ WORKING-STORAGE SECTION.
     88 DontTryAgain           VALUE "NO", "no", "n", "N".
 
 PROCEDURE DIVISION.
+
+*> (01.04 in original FOCAL code)
 Begin.
     DISPLAY "CONTROL CALLING LUNAR MODULE. MANUAL CONTROL IS NECESSARY"
     DISPLAY "YOU MAY RESET FUEL RATE K EACH 10 SECS TO 0 OR ANY VALUE"
@@ -135,7 +137,7 @@ PlayGame.
     MOVE 16500 TO EmptyWeight
     MOVE 0.001 TO Gravity
     MOVE 1.8   TO Z
-    MOVE 0     TO Elapsed
+    MOVE 0     TO ElapsedTime
 
     SET GameIsNotOver TO TRUE
 
@@ -150,7 +152,7 @@ PlayGame.
 *> Display current status and prompt for new Fuel-Rate value until
 *> valid answer is given.
 GetFuelRate.
-    MOVE Elapsed to ElapsedDisplay
+    MOVE ElapsedTime to ElapsedTimeDisplay
     COMPUTE AltitudeMilesDisplay = FUNCTION INTEGER-PART(Altitude)
     COMPUTE AltitudeFeetDisplay =
         (Altitude - FUNCTION INTEGER-PART(Altitude)) * FeetPerMile
@@ -198,22 +200,22 @@ Simulate.
     END-PERFORM
     EXIT.
 
-*> (4.10 in original FOCAL code)
+*> (04.10 in original FOCAL code)
 FuelOut.
-    MOVE Elapsed to FuelOutTimeDisplay
+    MOVE ElapsedTime to FuelOutTimeDisplay
     DISPLAY "FUEL OUT AT " FuelOutTimeDisplay " SECS"
     COMPUTE S =
         (FUNCTION SQRT(Velocity**2 + 2 * Altitude * Gravity) - Velocity)
         / Gravity
     COMPUTE Velocity = Velocity + Gravity * S
-    ADD S to Elapsed
+    ADD S to ElapsedTime
     PERFORM Contact
     EXIT.
 
 *> Handle touchdown/crash
 *> (05.10 in original FOCAL code)
 Contact.
-    MOVE Elapsed to ContactTimeDisplay
+    MOVE ElapsedTime to ContactTimeDisplay
     DISPLAY "ON THE MOON AT " ContactTimeDisplay " SECS"
 
     *> W is velocity in miles-per-hour
@@ -244,16 +246,16 @@ Contact.
     SET GameIsOver TO TRUE
     EXIT.
 
-*> Subroutine at line 06.10 in original FOCAL code
+*> (06.10 in original FOCAL code)
 UpdateLanderState.
-    ADD S TO Elapsed
+    ADD S TO ElapsedTime
     SUBTRACT S FROM T
     COMPUTE Weight = Weight - (S * FuelRate)
     MOVE I TO Altitude
     MOVE J TO Velocity
     EXIT.
 
-*> 7.10 in original FOCAL code
+*> (07.10 in original FOCAL code)
 UpdateUntilContact.
     PERFORM UNTIL S < 0.005
         COMPUTE S =
@@ -268,7 +270,7 @@ UpdateUntilContact.
     PERFORM Contact
     EXIT.
 
-*> 08-10 in original FOCAL code
+*> (08.10 in original FOCAL code)
 ApplyThrustLoop.
     PERFORM WITH TEST AFTER UNTIL (I <= 0) OR (-J < 0) OR (Velocity <= 0)
         COMPUTE W = (1 - Weight * Gravity / (Z * FuelRate)) / 2
@@ -286,7 +288,7 @@ ApplyThrustLoop.
     END-PERFORM
     EXIT.
 
-*> Subroutine at line 09.10 in original FOCAL code
+*> (09.10 in original FOCAL code)
 ApplyThrust.
     COMPUTE Q = S * FuelRate / Weight
     COMPUTE Q2 = Q ** 2
