@@ -189,7 +189,7 @@ Simulate.
                 PERFORM UpdateUntilContact
             ELSE
                 IF Velocity > 0 AND J < 0 THEN
-                    PERFORM Loop0810
+                    PERFORM ApplyThrustLoop
                 ELSE
                     PERFORM UpdateLanderState
                 END-IF
@@ -269,7 +269,7 @@ UpdateUntilContact.
     EXIT.
 
 *> 08-10 in original FOCAL code
-Loop0810.
+ApplyThrustLoop.
     PERFORM WITH TEST AFTER UNTIL (I <= 0) OR (-J < 0) OR (Velocity <= 0)
         COMPUTE W = (1 - Weight * Gravity / (Z * FuelRate)) / 2
         COMPUTE S =
