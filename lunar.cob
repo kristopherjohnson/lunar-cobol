@@ -139,7 +139,7 @@ PlayGame.
     MOVE 16500 TO EmptyWeight
     MOVE 0.001 TO Gravity
     MOVE 1.8   TO Z
-    MOVE 0     TO ElapsedTime
+    INITIALIZE ElapsedTime
 
     SET GameIsNotOver TO TRUE
 
@@ -155,11 +155,11 @@ PlayGame.
 *> valid answer is given.
 GetFuelRate.
     COMPUTE ElapsedTimeDisplay ROUNDED = ElapsedTime
-    COMPUTE AltitudeMilesDisplay = FUNCTION INTEGER-PART(Altitude)
+    MOVE FUNCTION INTEGER-PART(Altitude) TO AltitudeMilesDisplay
     COMPUTE AltitudeFeetDisplay ROUNDED =
         (Altitude - FUNCTION INTEGER-PART(Altitude)) * FeetPerMile
-    COMPUTE VelocityMphDisplay ROUNDED = Velocity * SecPerHour
-    COMPUTE FuelRemainingDisplay ROUNDED = Weight - EmptyWeight
+    MULTIPLY Velocity BY SecPerHour GIVING VelocityMphDisplay ROUNDED
+    SUBTRACT EmptyWeight FROM Weight GIVING FuelRemainingDisplay ROUNDED
 
     DISPLAY StatusRowData NO ADVANCING
 
@@ -205,13 +205,13 @@ Simulate.
 
 *> (04.10 in original FOCAL code)
 FuelOut.
-    COMPUTE FuelOutTimeDisplay = ElapsedTime
+    COMPUTE FuelOutTimeDisplay ROUNDED = ElapsedTime
     DISPLAY "FUEL OUT AT " FuelOutTimeDisplay " SECS"
     COMPUTE S ROUNDED =
         (FUNCTION SQRT(Velocity**2 + 2 * Altitude * Gravity) - Velocity)
         / Gravity
     COMPUTE Velocity ROUNDED = Velocity + Gravity * S
-    ADD S to ElapsedTime
+    ADD S to ElapsedTime ROUNDED
     PERFORM Contact
     EXIT.
 
@@ -222,12 +222,12 @@ Contact.
     DISPLAY "ON THE MOON AT " ContactTimeDisplay " SECS"
 
     *> W is velocity in miles-per-hour
-    COMPUTE W ROUNDED = SecPerHour * Velocity
+    MULTIPLY SecPerHour BY Velocity GIVING W ROUNDED
 
     COMPUTE ImpactVelocityDisplay ROUNDED = W
     DISPLAY "IMPACT VELOCITY OF " ImpactVelocityDisplay " M.P.H."
 
-    COMPUTE FuelLeftDisplay ROUNDED = Weight - EmptyWeight
+    SUBTRACT EmptyWeight FROM Weight GIVING FuelLeftDisplay ROUNDED
     DISPLAY "FUEL LEFT: " FuelLeftDisplay " LBS"
 
     EVALUATE W
