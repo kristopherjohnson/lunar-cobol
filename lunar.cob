@@ -31,20 +31,20 @@ WORKING-STORAGE SECTION.
 *> W - Temporary working variable
 *> Z - Thrust per pound of fuel burned
 
-01 Altitude                   PIC S9(6)V9(6)  USAGE COMP.
-01 Gravity                    PIC S9(6)V9(6)  USAGE COMP.
-01 I                          PIC S9(6)V9(6)  USAGE COMP.
-01 J                          PIC S9(6)V9(6)  USAGE COMP.
-01 FuelRate                   PIC S9(6)V9(6)  USAGE COMP.
-01 ElapsedTime                PIC S9(6)V9(6)  USAGE COMP.
-01 Weight                     PIC S9(6)V9(6)  USAGE COMP.
-01 EmptyWeight                PIC S9(6)V9(6)  USAGE COMP.
-01 Q                          PIC S9(6)V9(6)  USAGE COMP.
-01 S                          PIC S9(6)V9(6)  USAGE COMP.
-01 T                          PIC S9(6)V9(6)  USAGE COMP.
-01 Velocity                   PIC S9(6)V9(6)  USAGE COMP.
-01 W                          PIC S9(6)V9(6)  USAGE COMP.
-01 Z                          PIC S9(6)V9(6)  USAGE COMP.
+01 Altitude                   PIC S9(6)V9(10)  USAGE COMP.
+01 Gravity                    PIC S9(6)V9(10)  USAGE COMP.
+01 I                          PIC S9(6)V9(10)  USAGE COMP.
+01 J                          PIC S9(6)V9(10)  USAGE COMP.
+01 FuelRate                   PIC S9(6)V9(10)  USAGE COMP.
+01 ElapsedTime                PIC S9(6)V9(10)  USAGE COMP.
+01 Weight                     PIC S9(6)V9(10)  USAGE COMP.
+01 EmptyWeight                PIC S9(6)V9(10)  USAGE COMP.
+01 Q                          PIC S9(6)V9(10)  USAGE COMP.
+01 S                          PIC S9(6)V9(10)  USAGE COMP.
+01 T                          PIC S9(6)V9(10)  USAGE COMP.
+01 Velocity                   PIC S9(6)V9(10)  USAGE COMP.
+01 W                          PIC S9(6)V9(10)  USAGE COMP.
+01 Z                          PIC S9(6)V9(10)  USAGE COMP.
 
 *> Variables used by Simulate and related paragraphs.
 
@@ -52,10 +52,10 @@ WORKING-STORAGE SECTION.
     88 GameIsNotOver          VALUE 0.
     88 GameIsOver             VALUE 1.
 
-01 Q2                         PIC S9(6)V9(6)  USAGE COMP.
-01 Q3                         PIC S9(6)V9(6)  USAGE COMP.
-01 Q4                         PIC S9(6)V9(6)  USAGE COMP.
-01 Q5                         PIC S9(6)V9(6)  USAGE COMP.
+01 Q2                         PIC S9(6)V9(10)  USAGE COMP.
+01 Q3                         PIC S9(6)V9(10)  USAGE COMP.
+01 Q4                         PIC S9(6)V9(10)  USAGE COMP.
+01 Q5                         PIC S9(6)V9(10)  USAGE COMP.
 
 *> Output Formatting
 
@@ -78,11 +78,11 @@ WORKING-STORAGE SECTION.
     02 FILLER                 PIC X(12)  VALUE "NOT POSSIBLE".
     02 FILLER                 PIC X(51)  VALUE ALL '.'.
 
-01 FuelOutTimeDisplay         PIC -(5)9.99.
-01 ContactTimeDisplay         PIC -(5)9.99.
-01 ImpactVelocityDisplay      PIC -(5)9.99.
-01 FuelLeftDisplay            PIC -(5)9.99.
-01 LunarCraterDisplay         PIC -(5)9.99.
+01 FuelOutTimeDisplay         PIC -(4)9.99.
+01 ContactTimeDisplay         PIC -(4)9.99.
+01 ImpactVelocityDisplay      PIC -(4)9.99.
+01 FuelLeftDisplay            PIC -(4)9.99.
+01 LunarCraterDisplay         PIC -(4)9.99.
 
 *> User Input
 
@@ -107,6 +107,7 @@ Begin.
     PERFORM WITH TEST AFTER UNTIL DontTryAgain
         PERFORM PlayGame
 
+        DISPLAY BlankLine
         DISPLAY BlankLine
         DISPLAY BlankLine
         DISPLAY "TRY AGAIN?"
@@ -153,12 +154,12 @@ PlayGame.
 *> Display current status and prompt for new Fuel-Rate value until
 *> valid answer is given.
 GetFuelRate.
-    COMPUTE ElapsedTimeDisplay = ElapsedTime
+    COMPUTE ElapsedTimeDisplay ROUNDED = ElapsedTime
     COMPUTE AltitudeMilesDisplay = FUNCTION INTEGER-PART(Altitude)
-    COMPUTE AltitudeFeetDisplay =
+    COMPUTE AltitudeFeetDisplay ROUNDED =
         (Altitude - FUNCTION INTEGER-PART(Altitude)) * FeetPerMile
-    COMPUTE VelocityMphDisplay = Velocity * SecPerHour
-    COMPUTE FuelRemainingDisplay = Weight - EmptyWeight
+    COMPUTE VelocityMphDisplay ROUNDED = Velocity * SecPerHour
+    COMPUTE FuelRemainingDisplay ROUNDED = Weight - EmptyWeight
 
     DISPLAY StatusRowData NO ADVANCING
 
@@ -186,7 +187,7 @@ Simulate.
         ELSE
             MOVE T TO S
             IF (S * FuelRate) > (Weight - EmptyWeight) THEN
-                COMPUTE S = (Weight - EmptyWeight) / FuelRate
+                COMPUTE S ROUNDED = (Weight - EmptyWeight) / FuelRate
             END-IF
             PERFORM ApplyThrust
             IF I <= 0 THEN
@@ -206,10 +207,10 @@ Simulate.
 FuelOut.
     COMPUTE FuelOutTimeDisplay = ElapsedTime
     DISPLAY "FUEL OUT AT " FuelOutTimeDisplay " SECS"
-    COMPUTE S =
+    COMPUTE S ROUNDED =
         (FUNCTION SQRT(Velocity**2 + 2 * Altitude * Gravity) - Velocity)
         / Gravity
-    COMPUTE Velocity = Velocity + Gravity * S
+    COMPUTE Velocity ROUNDED = Velocity + Gravity * S
     ADD S to ElapsedTime
     PERFORM Contact
     EXIT.
@@ -217,17 +218,17 @@ FuelOut.
 *> Handle touchdown/crash
 *> (05.10 in original FOCAL code)
 Contact.
-    COMPUTE ContactTimeDisplay = ElapsedTime
+    COMPUTE ContactTimeDisplay ROUNDED = ElapsedTime
     DISPLAY "ON THE MOON AT " ContactTimeDisplay " SECS"
 
     *> W is velocity in miles-per-hour
-    COMPUTE W = SecPerHour * Velocity
+    COMPUTE W ROUNDED = SecPerHour * Velocity
 
-    COMPUTE ImpactVelocityDisplay = W
+    COMPUTE ImpactVelocityDisplay ROUNDED = W
     DISPLAY "IMPACT VELOCITY OF " ImpactVelocityDisplay " M.P.H."
 
-    COMPUTE FuelLeftDisplay = Weight - EmptyWeight
-    DISPLAY "FUEL LEFT: " FuelLeftDisplay
+    COMPUTE FuelLeftDisplay ROUNDED = Weight - EmptyWeight
+    DISPLAY "FUEL LEFT: " FuelLeftDisplay " LBS"
 
     EVALUATE W
         WHEN <  1 DISPLAY "PERFECT LANDING !-(LUCKY)"
@@ -238,7 +239,7 @@ Contact.
         WHEN OTHER
             PERFORM
                 DISPLAY "SORRY,BUT THERE WERE NO SURVIVORS-YOU BLEW IT!"
-                COMPUTE LunarCraterDisplay = W * 0.277777
+                COMPUTE LunarCraterDisplay ROUNDED = W * 0.277777
                 DISPLAY
                     "IN FACT YOU BLASTED A NEW LUNAR CRATER "
                     LunarCraterDisplay " FT. DEEP"
@@ -252,7 +253,7 @@ Contact.
 UpdateLanderState.
     ADD S TO ElapsedTime
     SUBTRACT S FROM T
-    COMPUTE Weight = Weight - (S * FuelRate)
+    COMPUTE Weight ROUNDED = Weight - (S * FuelRate)
     MOVE I TO Altitude
     MOVE J TO Velocity
     EXIT.
@@ -260,7 +261,7 @@ UpdateLanderState.
 *> (07.10 in original FOCAL code)
 UpdateUntilContact.
     PERFORM UNTIL S < 0.005
-        COMPUTE S =
+        COMPUTE S ROUNDED =
             2 * Altitude
             / (Velocity
                 + FUNCTION SQRT(
@@ -275,8 +276,8 @@ UpdateUntilContact.
 *> (08.10 in original FOCAL code)
 ApplyThrustLoop.
     PERFORM WITH TEST AFTER UNTIL (I <= 0) OR (-J < 0) OR (Velocity <= 0)
-        COMPUTE W = (1 - Weight * Gravity / (Z * FuelRate)) / 2
-        COMPUTE S =
+        COMPUTE W ROUNDED = (1 - Weight * Gravity / (Z * FuelRate)) / 2
+        COMPUTE S ROUNDED =
             Weight * Velocity
             / (Z * FuelRate
                 * (W + FUNCTION SQRT(W**2 + Velocity / Z)))
@@ -292,16 +293,16 @@ ApplyThrustLoop.
 
 *> (09.10 in original FOCAL code)
 ApplyThrust.
-    COMPUTE Q = S * FuelRate / Weight
-    COMPUTE Q2 = Q ** 2
-    COMPUTE Q3 = Q ** 3
-    COMPUTE Q4 = Q ** 4
-    COMPUTE Q5 = Q ** 5
-    COMPUTE J =
+    COMPUTE Q ROUNDED = S * FuelRate / Weight
+    COMPUTE Q2 ROUNDED = Q ** 2
+    COMPUTE Q3 ROUNDED = Q ** 3
+    COMPUTE Q4 ROUNDED = Q ** 4
+    COMPUTE Q5 ROUNDED = Q ** 5
+    COMPUTE J ROUNDED =
         Velocity
         + Gravity * S
         + Z * (-Q - Q2/2 - Q3/3 - Q4/4 - Q5/5)
-    COMPUTE I =
+    COMPUTE I ROUNDED =
         Altitude
         - Gravity * S * S / 2
         - Velocity * S
