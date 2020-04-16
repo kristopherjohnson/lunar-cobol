@@ -11,7 +11,7 @@ It was simple, primitive even, but I was immediately fascinated with computers. 
 
 So after that I kept bugging my dad to buy me books about programming.  A couple of years later, my parents bought me a computer.  Thanks Mom and Dad!
 
-I did some research, and found the original [Lunar Lander program written by Jim Storer][storerlunarlander] in the FOCAL programming language in 1969.  I've rewritten it in COBOL so that it can be built and run on modern systems.  The program here is pretty close to what I remember.  One difference is that, on crashing, that program announced "IT'S ALL OVER BUT THE SHOUTING", which confused me as a ten-year-old.  I thought the shouting was for joy.
+I did some research, and I found the [original Lunar Lander program by Jim Storer][storerlunarlander], written in the FOCAL programming language in 1969.  I've rewritten it in COBOL so that it can be built and run on modern systems.  The program here is pretty close to what I remember.  One difference is that, on crashing, that program announced "IT'S ALL OVER BUT THE SHOUTING", which confused me as a ten-year-old.  I thought the shouting was for joy.
 
 This code is based upon these sources:
 
@@ -26,7 +26,7 @@ If you have a UNIX-ish system with [GnuCOBOL][gnucobol] installed, you should be
 make run
 ```
 
-The code is intended to be compatible with any COBOL system that supports the 1985 standard.  I would appreciate hearing of any incompatibilities, and what is necessary to work around them.
+The code is intended to be compatible with any COBOL system that supports the 1985 standard.  I would like to know of any incompatibilities, and what is necessary to work around them.
 
 Here is an example play session:
 
