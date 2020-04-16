@@ -23,7 +23,7 @@ run: lunar
 # prefixes, resulting an a program that echoes all input back to output.  This
 # is useful for testing.
 lunar-test.cob: lunar.cob
-	$(SED) -e 's/.>TEST://g' lunar.cob > lunar-test.cob
+	$(SED) -e 's/\*>TEST://g' lunar.cob > lunar-test.cob
 
 lunar-test: lunar-test.cob
 
