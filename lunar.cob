@@ -89,9 +89,9 @@ WORKING-STORAGE SECTION.
 01 FuelRateAnswer             PIC 999.
     88 IsValidFuelRate        VALUE 0, 8 THRU 200.
 
-01 TryAgainAnswer             PIC X(3).
-    88 TryAgain               VALUE "YES", "yes", "y", "Y".
-    88 DontTryAgain           VALUE "NO", "no", "n", "N".
+01 TryAgainAnswer             PIC X.
+    88 TryAgain               VALUE "Y", "y".
+    88 DontTryAgain           VALUE "N", "n".
 
 PROCEDURE DIVISION.
 
