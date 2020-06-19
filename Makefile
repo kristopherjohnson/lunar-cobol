@@ -5,7 +5,7 @@
 
 # GnuCOBOL
 COBC:=cobc
-COBCFLAGS:=-free -W -Wno-terminator -O3 -std=cobol85
+COBCFLAGS:=-free -W -O3 -std=cobol85
 
 DIFF:=diff
 SED:=sed

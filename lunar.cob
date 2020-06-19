@@ -154,12 +154,26 @@ PlayGame.
 *> Display current status and prompt for new Fuel-Rate value until
 *> valid answer is given.
 GetFuelRate.
-    COMPUTE ElapsedTimeDisplay ROUNDED = ElapsedTime
+    COMPUTE
+        ElapsedTimeDisplay ROUNDED = ElapsedTime
+    END-COMPUTE
+
     MOVE FUNCTION INTEGER-PART(Altitude) TO AltitudeMilesDisplay
-    COMPUTE AltitudeFeetDisplay ROUNDED =
-        (Altitude - FUNCTION INTEGER-PART(Altitude)) * FeetPerMile
-    MULTIPLY Velocity BY SecPerHour GIVING VelocityMphDisplay ROUNDED
-    SUBTRACT EmptyWeight FROM Weight GIVING FuelRemainingDisplay ROUNDED
+
+    COMPUTE
+        AltitudeFeetDisplay ROUNDED =
+            (Altitude - FUNCTION INTEGER-PART(Altitude)) * FeetPerMile
+    END-COMPUTE
+
+    MULTIPLY
+        Velocity BY SecPerHour
+        GIVING VelocityMphDisplay ROUNDED
+    END-MULTIPLY
+
+    SUBTRACT
+        EmptyWeight FROM Weight
+        GIVING FuelRemainingDisplay ROUNDED
+    END-SUBTRACT
 
     DISPLAY StatusRowData NO ADVANCING
 
@@ -187,7 +201,9 @@ Simulate.
         ELSE
             MOVE T TO S
             IF (S * FuelRate) > (Weight - EmptyWeight) THEN
-                COMPUTE S ROUNDED = (Weight - EmptyWeight) / FuelRate
+                COMPUTE
+                    S ROUNDED = (Weight - EmptyWeight) / FuelRate
+                END-COMPUTE
             END-IF
             PERFORM ApplyThrust
             IF I <= 0 THEN
@@ -205,29 +221,52 @@ Simulate.
 
 *> (04.10 in original FOCAL code)
 FuelOut.
-    COMPUTE FuelOutTimeDisplay ROUNDED = ElapsedTime
+    COMPUTE
+        FuelOutTimeDisplay ROUNDED = ElapsedTime
+    END-COMPUTE
     DISPLAY "FUEL OUT AT " FuelOutTimeDisplay " SECS"
-    COMPUTE S ROUNDED =
-        (FUNCTION SQRT(Velocity**2 + 2 * Altitude * Gravity) - Velocity)
-        / Gravity
-    COMPUTE Velocity ROUNDED = Velocity + Gravity * S
-    ADD S to ElapsedTime ROUNDED
+
+    COMPUTE
+        S ROUNDED =
+            (FUNCTION SQRT(Velocity**2 + 2 * Altitude * Gravity)
+                - Velocity)
+            / Gravity
+    END-COMPUTE
+
+    COMPUTE
+        Velocity ROUNDED = Velocity + Gravity * S
+    END-COMPUTE
+
+    ADD
+        S to ElapsedTime ROUNDED
+    END-ADD
+
     PERFORM Contact
     EXIT.
 
 *> Handle touchdown/crash
 *> (05.10 in original FOCAL code)
 Contact.
-    COMPUTE ContactTimeDisplay ROUNDED = ElapsedTime
+    COMPUTE
+        ContactTimeDisplay ROUNDED = ElapsedTime
+    END-COMPUTE
     DISPLAY "ON THE MOON AT " ContactTimeDisplay " SECS"
 
     *> W is velocity in miles-per-hour
-    MULTIPLY SecPerHour BY Velocity GIVING W ROUNDED
+    MULTIPLY
+        SecPerHour BY Velocity
+        GIVING W ROUNDED
+    END-MULTIPLY
 
-    COMPUTE ImpactVelocityDisplay ROUNDED = W
+    COMPUTE
+        ImpactVelocityDisplay ROUNDED = W
+    END-COMPUTE
     DISPLAY "IMPACT VELOCITY OF " ImpactVelocityDisplay " M.P.H."
 
-    SUBTRACT EmptyWeight FROM Weight GIVING FuelLeftDisplay ROUNDED
+    SUBTRACT
+        EmptyWeight FROM Weight
+        GIVING FuelLeftDisplay ROUNDED
+    END-SUBTRACT
     DISPLAY "FUEL LEFT: " FuelLeftDisplay " LBS"
 
     EVALUATE W
@@ -239,7 +278,10 @@ Contact.
         WHEN OTHER
             PERFORM
                 DISPLAY "SORRY,BUT THERE WERE NO SURVIVORS-YOU BLEW IT!"
-                COMPUTE LunarCraterDisplay ROUNDED = W * 0.277777
+
+                COMPUTE
+                    LunarCraterDisplay ROUNDED = W * 0.277777
+                END-COMPUTE
                 DISPLAY
                     "IN FACT YOU BLASTED A NEW LUNAR CRATER "
                     LunarCraterDisplay " FT. DEEP"
@@ -251,9 +293,18 @@ Contact.
 
 *> (06.10 in original FOCAL code)
 UpdateLanderState.
-    ADD S TO ElapsedTime
-    SUBTRACT S FROM T
-    COMPUTE Weight ROUNDED = Weight - (S * FuelRate)
+    ADD
+        S TO ElapsedTime
+    END-ADD
+
+    SUBTRACT
+        S FROM T
+    END-SUBTRACT
+
+    COMPUTE
+        Weight ROUNDED = Weight - (S * FuelRate)
+    END-COMPUTE
+
     MOVE I TO Altitude
     MOVE J TO Velocity
     EXIT.
@@ -261,12 +312,14 @@ UpdateLanderState.
 *> (07.10 in original FOCAL code)
 UpdateUntilContact.
     PERFORM UNTIL S < 0.005
-        COMPUTE S ROUNDED =
-            2 * Altitude
-            / (Velocity
-                + FUNCTION SQRT(
-                    Velocity**2 + 2 * Altitude
-                    * (Gravity - Z * FuelRate / Weight)))
+        COMPUTE
+            S ROUNDED =
+                (2 * Altitude)
+                / (Velocity
+                    + FUNCTION SQRT(
+                        Velocity**2 + 2 * Altitude
+                        * (Gravity - Z * FuelRate / Weight)))
+        END-COMPUTE
         PERFORM ApplyThrust
         PERFORM UpdateLanderState
     END-PERFORM
@@ -276,13 +329,20 @@ UpdateUntilContact.
 *> (08.10 in original FOCAL code)
 ApplyThrustLoop.
     PERFORM WITH TEST AFTER UNTIL (I <= 0) OR (-J < 0) OR (Velocity <= 0)
-        COMPUTE W ROUNDED = (1 - Weight * Gravity / (Z * FuelRate)) / 2
-        COMPUTE S ROUNDED =
-            Weight * Velocity
-            / (Z * FuelRate
-                * (W + FUNCTION SQRT(W**2 + Velocity / Z)))
-            + 0.5
+        COMPUTE
+            W ROUNDED = (1 - Weight * Gravity / (Z * FuelRate)) / 2
+        END-COMPUTE
+
+        COMPUTE
+            S ROUNDED =
+                Weight * Velocity
+                / (Z * FuelRate
+                    * (W + FUNCTION SQRT(W**2 + Velocity / Z)))
+                + 0.5
+        END-COMPUTE
+
         PERFORM ApplyThrust
+
         IF I <= 0 THEN
             PERFORM UpdateUntilContact
         ELSE
@@ -293,19 +353,28 @@ ApplyThrustLoop.
 
 *> (09.10 in original FOCAL code)
 ApplyThrust.
-    COMPUTE Q ROUNDED = S * FuelRate / Weight
-    COMPUTE Q2 ROUNDED = Q ** 2
-    COMPUTE Q3 ROUNDED = Q ** 3
-    COMPUTE Q4 ROUNDED = Q ** 4
-    COMPUTE Q5 ROUNDED = Q ** 5
-    COMPUTE J ROUNDED =
-        Velocity
-        + Gravity * S
-        + Z * (-Q - Q2/2 - Q3/3 - Q4/4 - Q5/5)
-    COMPUTE I ROUNDED =
-        Altitude
-        - Gravity * S * S / 2
-        - Velocity * S
-        + Z * S * (Q/2 + Q2/6 + Q3/12 + Q4/20 + Q5/30)
+    COMPUTE
+        Q ROUNDED = S * FuelRate / Weight
+    END-COMPUTE
+
+    COMPUTE Q2 ROUNDED = Q ** 2 END-COMPUTE
+    COMPUTE Q3 ROUNDED = Q ** 3 END-COMPUTE
+    COMPUTE Q4 ROUNDED = Q ** 4 END-COMPUTE
+    COMPUTE Q5 ROUNDED = Q ** 5 END-COMPUTE
+
+    COMPUTE
+        J ROUNDED =
+            Velocity
+            + Gravity * S
+            + Z * (-Q - Q2/2 - Q3/3 - Q4/4 - Q5/5)
+    END-COMPUTE
+
+    COMPUTE
+        I ROUNDED =
+            Altitude
+            - Gravity * S * S / 2
+            - Velocity * S
+            + Z * S * (Q/2 + Q2/6 + Q3/12 + Q4/20 + Q5/30)
+    END-COMPUTE
     EXIT.
 
