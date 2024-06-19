@@ -338,7 +338,7 @@ ApplyThrustLoop.
                 Weight * Velocity
                 / (Z * FuelRate
                     * (W + FUNCTION SQRT(W**2 + Velocity / Z)))
-                + 0.5
+                + 0.05
         END-COMPUTE
 
         PERFORM ApplyThrust
